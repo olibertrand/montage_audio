@@ -1,0 +1,12 @@
+{
+  "name": "montage-audio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Montage audio multipiste simple, en français, qui fonctionne dans le navigateur.",
+  "scripts": {
+    "test": "node --test tests/logic.test.js",
+    "build": "node tools/build.mjs",
+    "build:artifact": "node tools/build.mjs --artifact",
+    "test:browser": "node --test tests/browser.test.js"
+  }
+}

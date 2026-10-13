@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- page:head -->
+<title>Montage Audio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+  // Polices chargées sans bloquer l'affichage (l'application marche aussi hors connexion).
+  (function () {
+    var l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap';
+    document.head.appendChild(l);
+  })();
+</script>
+<link rel="stylesheet" href="css/style.css">
+<!-- /page:head -->
+</head>
+<body>
+<!-- page:body -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand" aria-label="Montage Audio">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" class="brand-tile"/>
+        <rect x="6" y="9" width="3" height="14" rx="1.5" class="brand-bar"/>
+        <rect x="11" y="5" width="3" height="22" rx="1.5" class="brand-bar"/>
+        <rect x="16" y="11" width="3" height="10" rx="1.5" class="brand-bar alt"/>
+        <rect x="21" y="7" width="3" height="18" rx="1.5" class="brand-bar alt"/>
+        <rect x="26" y="13" width="2" height="6" rx="1" class="brand-bar"/>
+      </svg>
+      <span class="brand-name">Montage<span> Audio</span></span>
+    </div>
+    <input id="project-name" class="project-name" type="text" value="Mon montage" aria-label="Nom du projet" title="Nom du projet (cliquez pour le changer)" spellcheck="false">
+    <nav class="file-actions" aria-label="Projet">
+      <button id="btn-new" class="btn ghost" type="button" data-icon="file" title="Commencer un projet vide"><span>Nouveau</span></button>
+      <button id="btn-open" class="btn ghost" type="button" data-icon="folder" title="Ouvrir un projet enregistré (.montage)"><span>Ouvrir</span></button>
+      <button id="btn-save" class="btn ghost" type="button" data-icon="save" title="Enregistrer le projet et ses sons dans un fichier"><span>Enregistrer</span></button>
+    </nav>
+    <div class="spacer"></div>
+    <button id="btn-import" class="btn primary" type="button" data-icon="import" title="Ajouter des fichiers son (MP3, WAV, M4A…)"><span>Importer des sons</span></button>
+    <button id="btn-export" class="btn accent" type="button" data-icon="export" title="Créer le fichier final (MP3 ou WAV)"><span>Exporter</span></button>
+    <button id="btn-help" class="btn ghost icon-only" type="button" data-icon="help" data-icon-size="20" title="Aide et raccourcis" aria-label="Aide"></button>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Lecture et édition">
+    <div class="tool-group">
+      <button id="btn-undo" class="btn icon-only" type="button" data-icon="undo" aria-label="Annuler" disabled></button>
+      <button id="btn-redo" class="btn icon-only" type="button" data-icon="redo" aria-label="Rétablir" disabled></button>
+    </div>
+    <div class="tool-group transport">
+      <button id="btn-home" class="btn icon-only" type="button" data-icon="rewind" title="Revenir au début (touche Début)" aria-label="Revenir au début"></button>
+      <button id="btn-play" class="btn play" type="button" title="Lecture (Espace)" aria-label="Lecture" data-icon="play" data-icon-size="22"></button>
+      <button id="btn-stop" class="btn icon-only" type="button" data-icon="stop" title="Arrêter et revenir au point de départ (un 2e appui ramène au début)" aria-label="Arrêter"></button>
+      <button id="btn-rec" class="btn icon-only rec" type="button" data-icon="record" title="Enregistrer au micro sur une nouvelle piste (R)" aria-label="Enregistrer au micro" aria-pressed="false"></button>
+    </div>
+    <div class="clock" aria-live="off" title="Position de la tête de lecture / durée totale">
+      <span id="clock-time" class="clock-time">0:00,0</span>
+      <span class="clock-total">/ <span id="clock-total">0:00,0</span></span>
+    </div>
+    <div class="tool-group">
+      <button id="btn-split" class="btn" type="button" data-icon="scissors" title="Couper le morceau sélectionné en deux, à la tête de lecture (S)"><span>Couper</span></button>
+      <button id="btn-delete" class="btn" type="button" data-icon="trash" title="Supprimer les morceaux sélectionnés (Suppr)"><span>Supprimer</span></button>
+    </div>
+    <div class="tool-group">
+      <button id="btn-zoom-out" class="btn icon-only" type="button" data-icon="zoomOut" title="Dézoomer (−)" aria-label="Dézoomer"></button>
+      <button id="btn-zoom-in" class="btn icon-only" type="button" data-icon="zoomIn" title="Zoomer (+)" aria-label="Zoomer"></button>
+      <button id="btn-zoom-fit" class="btn" type="button" data-icon="fit" title="Voir tout le montage"><span>Tout voir</span></button>
+      <button id="btn-snap" class="btn toggle-btn" type="button" data-icon="magnet" aria-pressed="true" title="Aimant : les morceaux se collent aux autres morceaux et à la tête de lecture"><span>Aimant</span></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="master">
+      <label for="master-vol" class="master-label" data-icon="volume" data-icon-size="16"><span>Volume général</span></label>
+      <input id="master-vol" type="range" min="0" max="1000" step="4" title="Volume de sortie (double-clic : 0 dB)">
+      <output id="master-val" for="master-vol" class="master-val">0,0 dB</output>
+      <canvas id="master-meter" class="master-meter" aria-hidden="true"></canvas>
+      <button id="clip-led" class="clip-led" type="button" title="S’allume quand le son sature (trop fort). Cliquez pour l’éteindre.">Saturation</button>
+    </div>
+  </div>
+
+  <div id="demo-banner" class="banner" hidden>
+    <p><strong>Ceci est un exemple</strong> créé pour vous faire découvrir l’application : appuyez sur Lecture, déplacez les morceaux, essayez les curseurs de volume.</p>
+    <div class="banner-actions">
+      <button id="btn-banner-new" class="btn primary small" type="button">Commencer mon montage</button>
+      <button id="btn-banner-keep" class="btn ghost small" type="button">Garder l’exemple</button>
+    </div>
+  </div>
+
+  <main class="editor" id="editor">
+    <div class="ruler-row">
+      <div class="corner">
+        <button id="btn-add-track" class="btn small ghost" type="button" data-icon="plus" data-icon-size="16" title="Ajouter une piste vide"><span>Piste</span></button>
+      </div>
+      <canvas id="ruler" class="ruler" title="Cliquez ou glissez pour déplacer la tête de lecture"></canvas>
+    </div>
+    <div class="scroller" id="scroller">
+      <div class="inner" id="inner">
+        <div id="tracks" class="tracks"></div>
+        <div id="add-row" class="add-row">
+          <div class="add-head">
+            <button id="btn-add-track-2" class="btn ghost small" type="button" data-icon="plus" data-icon-size="16"><span>Ajouter une piste</span></button>
+          </div>
+          <div class="add-lane"><span>Déposez un son ici pour créer une nouvelle piste</span></div>
+        </div>
+        <div id="playhead" class="playhead" aria-hidden="true"></div>
+        <div id="snapline" class="snapline" hidden></div>
+        <div id="marquee" class="marquee" hidden></div>
+      </div>
+      <div id="empty" class="empty" hidden>
+        <div class="empty-card">
+          <h2>Commencez votre montage</h2>
+          <ol>
+            <li>Importez vos sons, ou glissez-les dans cette fenêtre.</li>
+            <li>Déplacez-les à la souris pour les placer dans le temps.</li>
+            <li>Réglez le volume de chaque piste avec son curseur.</li>
+            <li>Exportez le résultat en MP3 ou WAV.</li>
+          </ol>
+          <div class="empty-actions">
+            <button id="btn-import-empty" class="btn primary" type="button" data-icon="import"><span>Importer des sons</span></button>
+            <button id="btn-demo-empty" class="btn ghost" type="button"><span>Voir un exemple</span></button>
+          </div>
+        </div>
+      </div>
+      <div id="loading" class="loading"><span>Chargement de votre montage…</span></div>
+    </div>
+  </main>
+
+  <section id="inspector" class="inspector" aria-label="Réglages du morceau sélectionné"></section>
+</div>
+
+<div id="overlays"></div>
+<div class="drop-hint" aria-hidden="true"><span>Déposez vos sons sur une piste, ou n’importe où pour créer de nouvelles pistes</span></div>
+<input type="file" id="file-import" multiple accept="audio/*,video/mp4,video/webm,video/quicktime,.mp3,.wav,.ogg,.oga,.opus,.flac,.m4a,.aac,.webm,.mp4,.aif,.aiff" hidden>
+<input type="file" id="file-open" accept=".montage,.zip" hidden>
+
+<script src="vendor/lame.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/store.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/peaks.js"></script>
+<script src="js/formats.js"></script>
+<script src="js/persist.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/recorder.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/main.js"></script>
+<!-- /page:body -->
+</body>
+</html>
