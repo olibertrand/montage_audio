@@ -59,8 +59,14 @@ sed -e "s/montage\.example\.fr/$DOMAINE/" -e "s#/var/www/montage-audio#$DOSSIER_
 caddy validate --adapter caddyfile --config "$NOUVELLE" >/dev/null || erreur "la configuration générée est invalide ($NOUVELLE)."
 install -m 644 "$NOUVELLE" "$CONF"
 rm -f "$NOUVELLE"
+# La vérification ci-dessus, lancée en root, peut créer le fichier journal : on le rend à Caddy.
+chown -R caddy:caddy /var/log/caddy
 systemctl enable caddy >/dev/null 2>&1 || true
-if systemctl is-active --quiet caddy; then systemctl reload caddy; else systemctl start caddy; fi
+if systemctl is-active --quiet caddy; then ACTION=reload; else ACTION=start; fi
+if ! systemctl "$ACTION" caddy; then
+  journalctl -u caddy --no-pager -n 15 || true
+  erreur "Caddy n'a pas pu appliquer la configuration (voir les messages ci-dessus)."
+fi
 
 echo "== 4/4 Pare-feu"
 if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
