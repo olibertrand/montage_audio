@@ -9,8 +9,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 const LAME_CDN = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js';
 
+// Les polices sont intégrées au fichier (data: URI) : aucun fichier à côté, aucune requête extérieure.
+const embedFonts = (css) =>
+  css.replace(/url\('\.\.\/(fonts\/[^']+\.woff2)'\)/g, (_, f) => `url(data:font/woff2;base64,${fs.readFileSync(path.join(root, f)).toString('base64')})`);
+
 function inline(html, { artifact }) {
-  html = html.replace(/<link rel="stylesheet" href="(css\/[^"]+)">/g, (_, f) => `<style>\n${read(f)}</style>`);
+  html = html.replace(/<link rel="stylesheet" href="(css\/[^"]+)">/g, (_, f) => `<style>\n${embedFonts(read(f))}</style>`);
   html = html.replace(/<script src="([^"]+)"><\/script>/g, (_, f) => {
     if (artifact && f.startsWith('vendor/lame')) return `<script src="${LAME_CDN}"></script>`;
     const code = read(f).replace(/<\/script/gi, '<\\/script');

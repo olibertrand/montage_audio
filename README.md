@@ -17,6 +17,43 @@ temps, et régler le **volume de chaque piste** séparément. Il reste plus simp
 Au premier lancement, un **projet d'exemple** s'ouvre (musique fabriquée sur place) pour
 découvrir l'outil. Le bouton « Commencer mon montage » repart d'un projet vide.
 
+## Mettre l'application en ligne sur votre serveur
+
+L'application n'a besoin que d'un serveur web qui envoie un fichier : tout le travail se fait dans
+le navigateur des visiteurs, et leurs sons ne sont jamais envoyés au serveur. Elle n'appelle aucun
+service extérieur (les polices sont incluses).
+
+Il vous faut :
+
+- un serveur (VPS) sous **Ubuntu** ou **Debian**, sans panneau d'administration préinstallé ;
+- un nom de domaine ou sous-domaine (par exemple `montage.mon-domaine.fr`) avec un
+  enregistrement DNS de type **A** qui pointe vers l'adresse IP du serveur ;
+- les ports **80** et **443** ouverts si votre hébergeur a un pare-feu (ainsi que le 22 pour SSH).
+
+Ensuite, connecté au serveur en `root` (`ssh root@ADRESSE_IP`) :
+
+```
+apt update && apt install -y git
+git clone https://github.com/olibertrand/montage_audio.git /opt/montage-audio
+bash /opt/montage-audio/deploy/installer.sh montage.mon-domaine.fr
+```
+
+Le script installe [Caddy](https://caddyserver.com), copie l'application dans
+`/var/www/montage-audio` et configure le site. Caddy obtient et renouvelle tout seul le certificat
+HTTPS ; le HTTPS est indispensable pour enregistrer au micro. L'application est alors disponible à
+l'adresse `https://montage.mon-domaine.fr`. Si vous n'êtes pas connecté en `root`, ajoutez `sudo`
+devant chaque commande.
+
+Pour mettre à jour l'application après une modification du dépôt :
+
+```
+bash /opt/montage-audio/deploy/mettre-a-jour.sh
+```
+
+La configuration se trouve dans [`deploy/Caddyfile`](deploy/Caddyfile) : HTTPS, compression,
+en-têtes de sécurité, fichiers cachés jamais servis. Chaque visiteur garde ses projets dans son
+propre navigateur : il n'y a ni comptes ni projets partagés sur le serveur.
+
 ## Les bases en 5 étapes
 
 1. **Importez vos sons** : bouton « Importer des sons », ou glissez vos fichiers dans la fenêtre.
@@ -94,6 +131,7 @@ Aucune dépendance ni étape de compilation : HTML, CSS et JavaScript simples.
 ```
 index.html          page principale
 css/style.css       apparence (thème clair et sombre)
+css/fonts.css       polices incluses (fichiers dans fonts/, licence SIL OFL)
 js/util.js          conversions dB, format du temps, outils DOM
 js/store.js         état du projet, calculs de volume des morceaux, annuler/rétablir
 js/audio.js         moteur audio (Web Audio) : écoute et rendu final
@@ -107,6 +145,7 @@ js/demo.js          projet d'exemple synthétisé
 js/main.js          démarrage, actions, clavier, import/export
 vendor/lame.min.js  encodeur MP3 lamejs 1.2.1 (LGPL-3.0)
 tools/build.mjs     assemble dist/montage-audio.html
+deploy/             configuration Caddy et scripts d'installation sur un serveur
 ```
 
 - `npm test` : tests de la logique (Node 18 ou plus).

@@ -1,0 +1,38 @@
+# Configuration Caddy pour Montage Audio.
+#
+# Remplacez montage.example.fr par votre (sous-)domaine. Ce nom doit déjà pointer vers
+# l'adresse IP du serveur (enregistrement DNS de type A). Caddy obtient et renouvelle
+# tout seul le certificat HTTPS ; le HTTPS est indispensable pour utiliser le micro.
+#
+# Le script deploy/installer.sh écrit ce fichier dans /etc/caddy/Caddyfile avec votre domaine.
+
+montage.example.fr {
+	root * /var/www/montage-audio
+	encode zstd gzip
+	file_server
+
+	# Ne jamais servir de fichiers cachés (.git, .env…)
+	@cache path */.*
+	respond @cache 404
+
+	header {
+		# Toujours en HTTPS pendant un an
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		# Le micro n'est accessible qu'à l'application elle-même
+		Permissions-Policy "microphone=(self), camera=(), geolocation=(), payment=(), usb=()"
+		# Tout vient du site lui-même : aucune ressource extérieure, pas d'intégration dans un autre site
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		# Le navigateur vérifie à chaque visite s'il existe une nouvelle version
+		Cache-Control "no-cache"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/montage-audio.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
