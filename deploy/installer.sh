@@ -49,14 +49,16 @@ install -m 644 "$DEPOT/dist/montage-audio.html" "$DOSSIER_SITE/index.html"
 install -d -o caddy -g caddy -m 755 /var/log/caddy
 
 echo "== 3/4 Configuration de Caddy pour $DOMAINE"
-if [ -f "$CONF" ] && ! grep -q "Montage Audio" "$CONF"; then
-  SAUVEGARDE="$CONF.avant-montage-audio.$(date +%Y%m%d-%H%M%S)"
-  cp "$CONF" "$SAUVEGARDE"
-  echo "L'ancienne configuration est sauvegardée dans $SAUVEGARDE"
-fi
 NOUVELLE="$(mktemp)"
 sed -e "s/montage\.example\.fr/$DOMAINE/" -e "s#/var/www/montage-audio#$DOSSIER_SITE#" "$DEPOT/deploy/Caddyfile" > "$NOUVELLE"
 caddy validate --adapter caddyfile --config "$NOUVELLE" >/dev/null || erreur "la configuration générée est invalide ($NOUVELLE)."
+# Toute configuration différente (par exemple avec d'autres sites ajoutés à la main) est sauvegardée.
+if [ -f "$CONF" ] && ! cmp -s "$NOUVELLE" "$CONF"; then
+  SAUVEGARDE="$CONF.sauvegarde.$(date +%Y%m%d-%H%M%S)"
+  cp "$CONF" "$SAUVEGARDE"
+  echo "L'ancienne configuration est sauvegardée dans $SAUVEGARDE"
+  echo "(si vous y aviez ajouté d'autres sites, recopiez-les dans $CONF)"
+fi
 install -m 644 "$NOUVELLE" "$CONF"
 rm -f "$NOUVELLE"
 # La vérification ci-dessus, lancée en root, peut créer le fichier journal : on le rend à Caddy.
